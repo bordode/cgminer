@@ -9,7 +9,7 @@ When mining on windows, the driver being used will determine if mining will work
 
 If the driver doesn't allow mining, you will get a "USB init," error message
 i.e. one of:
- open device failed, err %d, you need to install a Windows USB driver for the device
+ open device failed, err %d, you need to install a WinUSB driver for the device
 or
  claim interface %d failed, err %d
 
@@ -19,11 +19,15 @@ The best solution for this is to use a tool called Zadig to set the driver:
 This allows you set the driver for the device to be WinUSB which is usually
 required to make it work if you're having problems
 
-With Zaidg, you may need to run it as administrator and if your device is
+With Zadig, you may need to run it as administrator and if your device is
 plugged in but you cannot see it, use the Menu: Options -> List All Devices
 
 You must also make sure you are using the latest libusb-1.0.dll supplied
 with cgminer (not the libusbx version)
+
+When you first switch a device over to WinUSB with Zadig and it shows that
+correctly on the left of the Zadig window, but it still gives permission
+errors, you may need to unplug the USB miner and then plug it back in
 
 -
 
@@ -209,8 +213,8 @@ only 1 FPGA actually runs on the board (e.g. like an early CM1 Icarus copy bitst
 
 --icarus-timing <arg> Set how the Icarus timing is calculated - one setting/value for all or comma separated
            default[=N]   Use the default Icarus hash time (2.6316ns)
-           short         Calculate the hash time and stop adjusting it at ~315 difficulty 1 shares (~1hr)
-           long          Re-calculate the hash time continuously
+           short=[N]     Calculate the hash time and stop adjusting it at ~315 difficulty 1 shares (~1hr)
+           long=[N]      Re-calculate the hash time continuously
            value[=N]     Specify the hash time in nanoseconds (e.g. 2.6316) and abort time (e.g. 2.6316=80)
 
 If you define fewer comma seperated values than Icarus devices, the last values will be used
@@ -232,6 +236,10 @@ Any CPU delays while calculating the hash time will affect the result
 'short' mode only requires the computer to be stable until it has completed ~315 difficulty 1 shares
 'long' mode requires it to always be stable to ensure accuracy, however, over time it continually
 corrects itself
+The optional additional =N for 'short' or 'long' specifies the limit to set the timeout to in N * 100ms
+thus if the timing code calculation is higher while running, it will instead use N * 100ms
+This can be set to the appropriate value to ensure the device never goes idle even if the
+calculation is negatively affected by system performance
 
 When in 'short' or 'long' mode, it will report the hash time value each time it is re-calculated
 In 'short' or 'long' mode, the scan abort time starts at 5 seconds and uses the default 2.6316ns

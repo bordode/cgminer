@@ -1,5 +1,7 @@
 /*
  *
+ * Copyright (C) Andrew Smith 2012-2013
+ *
  * Usage: java API command ip port
  *
  * If any are missing or blank they use the defaults:
@@ -86,7 +88,7 @@ System.out.println("Attempting to send '"+cmd+"' to "+ip.getHostAddress()+":"+po
 		{
 			socket = new Socket(ip, port);
 			PrintStream ps = new PrintStream(socket.getOutputStream());
-			ps.print(cmd.toLowerCase().toCharArray());
+			ps.print(cmd.toCharArray());
 			ps.flush();
 
 			InputStreamReader isr = new InputStreamReader(socket.getInputStream());

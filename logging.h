@@ -17,8 +17,9 @@ enum {
 };
 #endif
 
-/* original / legacy debug flags */
+/* debug flags */
 extern bool opt_debug;
+extern bool opt_decode;
 extern bool opt_log_output;
 extern bool opt_realquiet;
 extern bool want_per_device_stats;
@@ -26,22 +27,105 @@ extern bool want_per_device_stats;
 /* global log_level, messages with lower or equal prio are logged */
 extern int opt_log_level;
 
-/* low-level logging functions with priority parameter */
-extern void vapplog(int prio, const char *fmt, va_list ap);
-extern void _applog(int prio, const char *fmt, ...);
+#define LOGBUFSIZ 256
+
+extern void _applog(int prio, const char *str, bool force);
+extern void _simplelog(int prio, const char *str, bool force);
+
+#define IN_FMT_FFL " in %s %s():%d"
+
 #define applog(prio, fmt, ...) do { \
- char *tmp42; \
- if (0) \
-	sprintf(tmp42, fmt, ##__VA_ARGS__); \
- else \
-	_applog(prio, fmt, ##__VA_ARGS__); \
+	if (opt_debug || prio != LOG_DEBUG) { \
+		if (use_syslog || opt_log_output || prio <= opt_log_level) { \
+			char tmp42[LOGBUFSIZ]; \
+			snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+			_applog(prio, tmp42, false); \
+		} \
+	} \
 } while (0)
 
-/* high-level logging functions with implicit priority */
-extern void log_error(const char *fmt, ...);
-extern void log_warning(const char *fmt, ...);
-extern void log_notice(const char *fmt, ...);
-extern void log_info(const char *fmt, ...);
-extern void log_debug(const char *fmt, ...);
+#define simplelog(prio, fmt, ...) do { \
+	if (opt_debug || prio != LOG_DEBUG) { \
+		if (use_syslog || opt_log_output || prio <= opt_log_level) { \
+			char tmp42[LOGBUFSIZ]; \
+			snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+			_simplelog(prio, tmp42, false); \
+		} \
+	} \
+} while (0)
+
+#define applogsiz(prio, _SIZ, fmt, ...) do { \
+	if (opt_debug || prio != LOG_DEBUG) { \
+		if (use_syslog || opt_log_output || prio <= opt_log_level) { \
+			char tmp42[_SIZ]; \
+			snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+			_applog(prio, tmp42, false); \
+		} \
+	} \
+} while (0)
+
+#define forcelog(prio, fmt, ...) do { \
+	if (opt_debug || prio != LOG_DEBUG) { \
+		if (use_syslog || opt_log_output || prio <= opt_log_level) { \
+			char tmp42[LOGBUFSIZ]; \
+			snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+			_applog(prio, tmp42, true); \
+		} \
+	} \
+} while (0)
+
+#define quit(status, fmt, ...) do { \
+	if (fmt) { \
+		char tmp42[LOGBUFSIZ]; \
+		snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+		_applog(LOG_ERR, tmp42, true); \
+	} \
+	_quit(status); \
+} while (0)
+
+#define early_quit(status, fmt, ...) do { \
+	if (fmt) { \
+		char tmp42[LOGBUFSIZ]; \
+		snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+		_applog(LOG_ERR, tmp42, true); \
+	} \
+	__quit(status, false); \
+} while (0)
+
+#define quithere(status, fmt, ...) do { \
+	if (fmt) { \
+		char tmp42[LOGBUFSIZ]; \
+		snprintf(tmp42, sizeof(tmp42), fmt IN_FMT_FFL, \
+				##__VA_ARGS__, __FILE__, __func__, __LINE__); \
+		_applog(LOG_ERR, tmp42, true); \
+	} \
+	_quit(status); \
+} while (0)
+
+#define quitfrom(status, _file, _func, _line, fmt, ...) do { \
+	if (fmt) { \
+		char tmp42[LOGBUFSIZ]; \
+		snprintf(tmp42, sizeof(tmp42), fmt IN_FMT_FFL, \
+				##__VA_ARGS__, _file, _func, _line); \
+		_applog(LOG_ERR, tmp42, true); \
+	} \
+	_quit(status); \
+} while (0)
+
+#ifdef HAVE_CURSES
+
+#define wlog(fmt, ...) do { \
+	char tmp42[LOGBUFSIZ]; \
+	snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+	_wlog(tmp42); \
+} while (0)
+
+#define wlogprint(fmt, ...) do { \
+	char tmp42[LOGBUFSIZ]; \
+	snprintf(tmp42, sizeof(tmp42), fmt, ##__VA_ARGS__); \
+	_wlogprint(tmp42); \
+} while (0)
+
+#endif
 
 #endif /* __LOGGING_H__ */
